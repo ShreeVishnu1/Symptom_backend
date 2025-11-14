@@ -1,0 +1,16 @@
+# Virtual Environment
+# This folder holds all your installed libraries
+venv/
+
+# Python Cache
+# These are temporary files Python creates
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+
+.env
+
+
+

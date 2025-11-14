@@ -1,0 +1,20 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+beanie              # Our MongoDB helper
+google-generativeai # Gemini
+gradio_client       # Whisper STT API
+
+# ML Dependencies
+pandas
+scikit-learn
+numpy
+
+# Auth Dependencies
+passlib==1.7.4
+bcrypt==3.2.0     # For hashing passwords
+python-jose[cryptography] # For creating JWTs
+
+pydantic-settings
+pydantic[email]
+python-multipart
