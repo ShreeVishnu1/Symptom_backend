@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     MONGO_URI: str
     GEMINI_API_KEY: str
+    GROQ_API_KEY: str = "" 
     HF_SPACE_URL: str
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
@@ -10,5 +11,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()

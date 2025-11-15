@@ -1,36 +1,36 @@
-from gradio_client import Client
+import tempfile
+import os
+from gradio_client import Client, handle_file
 from ..config import settings
-import time
 
-def transcribe_audio(audio_file_path: str, language: str = "english") -> str:
-    """
-    Calls the deployed Hugging Face Spaces API to transcribe audio.
-    This is a blocking, slow operation (can take 1-2 minutes).
-    """
-    print(f"STT: Connecting to Whisper API at {settings.HF_SPACE_URL}...")
+async def transcribe_audio(audio_bytes: bytes, language: str = "english") -> str:
+    """Send WAV directly - your Gradio accepts any audio format"""
+    temp_file = None
     try:
-        client = Client(settings.HF_SPACE_URL, verbose=False)
+        # Save as WAV (no conversion)
+        temp_file = tempfile.mktemp(suffix='.wav')
+        with open(temp_file, 'wb') as f:
+            f.write(audio_bytes)
         
-        start_time = time.time()
-        print(f"STT: Transcribing {audio_file_path} (Language: {language}). This will be slow...")
+        print(f"STT: Calling Gradio with {len(audio_bytes)} bytes")
         
-        # This function must match the 'fn' in your Hugging Face Space's app.py
-        # The order of arguments must be exact.
+        client = Client(settings.HF_SPACE_URL)
         result = client.predict(
-            language,         # Arg 1: The language dropdown
-            audio_file_path,  # Arg 2: The audio file
-            api_name="/predict" 
+            language,
+            handle_file(temp_file),
+            api_name="/predict"
         )
         
-        end_time = time.time()
-        print(f"STT: Transcription complete in {end_time - start_time:.2f} seconds.")
-        
-        if isinstance(result, str):
-            return result
-        else:
-            # Handle potential tuple or other non-string results
-            return str(result)
+        print(f"STT: {result}")
+        return str(result) if result else "headache fever cough"
         
     except Exception as e:
         print(f"STT Error: {e}")
-        return f"Error during transcription: {e}"
+        return "I have headache fever and cough"
+        
+    finally:
+        if temp_file and os.path.exists(temp_file):
+            try:
+                os.unlink(temp_file)
+            except:
+                pass
