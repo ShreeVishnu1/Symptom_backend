@@ -120,17 +120,49 @@ Predict the top 3 most likely diseases. Return ONLY valid JSON:
             # No Groq key - use keyword prediction
             ml_results = keyword_based_prediction(symptom_list)
 
-    # --- 5. Generate Summary ---
+    # ========== ADD PRESCRIPTION GENERATION HERE (BEFORE SUMMARY) ==========
+    # --- 5. Generate AI Prescription ---
+    try:
+        # Get disease from predictions
+        if isinstance(ml_results, dict):
+            predictions = ml_results.get('predictions', [])
+            disease = predictions[0].get('disease', 'Unknown') if predictions else 'Unknown'
+        else:
+            disease = 'Unknown'
+        
+        # Generate prescription using LLM service
+        ai_prescription = llm_service.generate_ai_prescription(
+            symptom_list,
+            disease,
+            ml_results
+        )
+        print(f"✅ Prescription: {len(ai_prescription.get('medications', []))} medications")
+        
+    except Exception as e:
+        print(f"Prescription Error: {e}")
+        ai_prescription = {
+            "medications": [],
+            "disclaimer": "Prescription generation unavailable. Please consult supervising physician."
+        }
+    # ========== END PRESCRIPTION GENERATION ==========
+
+    # --- 6. Generate Summary ---
     try:
         final_summary = llm_service.generate_final_summary(
             raw_text,
             ml_results if isinstance(ml_results, dict) else {"predictions": []}
         )
+        
+        # Add prescription reference to summary
+        med_count = len(ai_prescription.get('medications', []))
+        if med_count > 0:
+            final_summary += f"\n\n💊 AI has suggested {med_count} medication(s) for educational review."
+        
     except Exception as e:
         print(f"Summary Error: {e}")
         final_summary = f"Analysis completed for symptoms: {', '.join(symptom_list)}. Please consult a healthcare provider."
 
-    # --- 6. Save to DB ---
+    # --- 7. Save to DB ---
     try:
         new_history = AnalysisResult(
             user_uid=current_user.username,
@@ -144,12 +176,15 @@ Predict the top 3 most likely diseases. Return ONLY valid JSON:
     except Exception as e:
         print(f"DB Error: {e}")
     
+    # ========== ADD ai_prescription TO RETURN ==========
     return {
         "transcription": raw_text,
         "extracted_symptoms": symptom_list,
         "ml_predictions": ml_results,
-        "final_summary": final_summary
+        "final_summary": final_summary,
+        "ai_prescription": ai_prescription  # ← NEW! Add this line
     }
+    # ========== END RETURN UPDATE ==========
 
 
 def keyword_based_prediction(symptoms: List[str]) -> dict:
