@@ -21,3 +21,5 @@ python-multipart
 
 pydub
 groq
+
+motor==3.5.1
