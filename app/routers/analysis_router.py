@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, File, UploadFile, Body
-from ..models import User, AnalysisResult
+from ..models import User, AnalysisResult, Consultation 
 from ..auth import get_current_user
 from ..services import stt_service, llm_service
 from ..services.auditor_service import auditor
@@ -176,13 +176,54 @@ Predict the top 3 most likely diseases. Return ONLY valid JSON:
     except Exception as e:
         print(f"DB Error: {e}")
     
-    # ========== ADD ai_prescription TO RETURN ==========
+    try:
+        # Extract diagnosis from predictions
+        if isinstance(ml_results, dict):
+            predictions = ml_results.get('predictions', [])
+            diagnosis = predictions[0].get('disease', 'Unknown') if predictions else 'Unknown'
+            confidence = predictions[0].get('probability', 'N/A') if predictions else 'N/A'
+            precautions_dict = predictions[0].get('precautions', {}) if predictions else {}
+            precautions_list = [v for k, v in precautions_dict.items() if v]
+        else:
+            diagnosis = 'Unknown'
+            confidence = 'N/A'
+            precautions_list = []
+        
+        # Create consultation record
+        consultation = Consultation(
+        patient_email=current_user.email,
+        patient_name=current_user.username,
+        doctor_email="doc@example.com",
+        doctor_name="Dr. Rajesh Verma",
+        transcription=raw_text,
+        symptoms=symptom_list,
+        diagnosis=diagnosis,
+        diagnosis_confidence=confidence,
+        summary=final_summary,
+        medications=ai_prescription.get('medications', []),
+        precautions=precautions_list,
+        ml_predictions=ml_results,
+        followup_date=None,  # Will be updated if doctor schedules
+        followup_time=None,
+        status="completed"
+    )
+    
+        await consultation.insert()
+        consultation_id = str(consultation.id)  # Save for returning
+        print(f"✅ Consultation saved: {consultation_id}")
+    
+    except Exception as e:
+        print(f"Consultation save error: {e}")
+        consultation_id = None
+    
+    # Update return to include consultation_id
     return {
         "transcription": raw_text,
         "extracted_symptoms": symptom_list,
         "ml_predictions": ml_results,
         "final_summary": final_summary,
-        "ai_prescription": ai_prescription  # ← NEW! Add this line
+        "ai_prescription": ai_prescription,
+        "consultation_id": consultation_id  # NEW
     }
     # ========== END RETURN UPDATE ==========
 

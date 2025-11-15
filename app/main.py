@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from .database import init_db
 from .services.auditor_service import auditor # Your ML model service
 from .routers import analysis_router, auth_router # Your API endpoints
-
+from .routers import patient_router, doctor_router  # NEW
 # This "lifespan" function is CRITICAL
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,6 +30,8 @@ app.add_middleware(
 # Include your API endpoints
 app.include_router(auth_router.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(analysis_router.router, prefix="/api", tags=["Analysis"])
+app.include_router(patient_router.router, prefix="/api/patient", tags=["patient"])  # NEW
+app.include_router(doctor_router.router, prefix="/api/doctor", tags=["doctor"])    # NEW
 
 @app.get("/")
 def read_root():

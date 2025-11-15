@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
+from datetime import datetime
 from beanie import Document
 from typing import List, Optional, Literal # <-- Add Literal
 
@@ -49,3 +50,31 @@ class AnalysisResult(Document):
 class AnalysisRequest(BaseModel):
     text: str = Field(..., description="Input text")
     patient_id: list[str] = Field(default_factory=list, description="patient")
+
+# ========== NEW: Consultation Model ==========
+class Consultation(Document):
+    """Stores consultation sessions"""
+    patient_email: str = Field(..., index=True)
+    patient_name: str
+    doctor_email: str = Field(..., index=True)
+    doctor_name: str = "Dr. Rajesh Verma"  # NEW
+    
+    transcription: str
+    symptoms: List[str]
+    diagnosis: str
+    diagnosis_confidence: str
+    summary: str
+    
+    medications: List[dict] = []
+    precautions: List[str] = []
+    ml_predictions: dict = {}
+    
+    # Follow-up appointment (NEW)
+    followup_date: Optional[str] = None
+    followup_time: Optional[str] = None
+    
+    consultation_date: datetime = Field(default_factory=datetime.now)
+    status: str = "completed"
+    
+    class Settings:
+        name = "consultations"
