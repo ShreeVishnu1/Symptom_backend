@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: symptom-storyteller-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        value: symptom_storyteller
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: HF_SPACE_URL
+        value: https://shreevishnu369-speech-to-text.hf.space
+      - key: JWT_SECRET_KEY
+        sync: false
